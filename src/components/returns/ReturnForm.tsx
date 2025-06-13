@@ -24,6 +24,10 @@ const ReturnForm: React.FC<ReturnFormProps> = ({ loan, onSuccess, onClose }) => 
     e.preventDefault();
     
     try {
+      if (!loan.id_peminjaman) {
+        alert('ID peminjaman tidak valid!');
+        return;
+      }
       processReturn(loan.id_peminjaman, returnDate);
       onSuccess();
     } catch (error) {

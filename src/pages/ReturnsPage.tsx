@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { useLibrary } from '../context/LibraryContext';
-import { Search, BookCheck, User, Calendar, DollarSign, CheckCircle } from 'lucide-react';
+import { useLibrary, useGlobalDate } from '../context/LibraryContext';
+import { Search, BookCheck, User, DollarSign, CheckCircle } from 'lucide-react';
 import ReturnForm from '../components/returns/ReturnForm';
+import { Peminjaman } from '../types';
 
 const ReturnsPage: React.FC = () => {
-  const { peminjaman, buku, anggota, processReturn } = useLibrary();
+  const { peminjaman, buku, anggota } = useLibrary();
+  const { globalDate } = useGlobalDate();
+  const globalDateString = (globalDate ? globalDate : new Date()).toISOString().split('T')[0];
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLoan, setSelectedLoan] = useState<any>(null);
+  const [selectedLoan, setSelectedLoan] = useState<Peminjaman | null>(null);
   const [showReturnForm, setShowReturnForm] = useState(false);
 
   const activeLoans = peminjaman.filter(p => p.status_peminjaman === 'dipinjam' || p.status_peminjaman === 'terlambat');
@@ -22,7 +25,7 @@ const ReturnsPage: React.FC = () => {
     );
   });
 
-  const handleReturnClick = (loan: any) => {
+  const handleReturnClick = (loan: Peminjaman) => {
     setSelectedLoan(loan);
     setShowReturnForm(true);
   };
@@ -32,24 +35,20 @@ const ReturnsPage: React.FC = () => {
     setSelectedLoan(null);
   };
 
-  const isOverdue = (dueDate: string) => {
-    return new Date(dueDate) < new Date();
-  };
-
-  const calculateFine = (dueDate: string, returnDate: string = new Date().toISOString().split('T')[0]) => {
+  const calculateFine = (dueDate: string, returnDate: string = globalDateString) => {
     const due = new Date(dueDate);
     const returned = new Date(returnDate);
-    
     if (returned <= due) return 0;
-    
     const diffTime = returned.getTime() - due.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays * 1000;
   };
 
   const todayReturns = peminjaman.filter(p => {
-    const today = new Date().toDateString();
-    return p.tanggal_kembali_aktual && new Date(p.tanggal_kembali_aktual).toDateString() === today;
+    if (p.tanggal_kembali_aktual && globalDate) {
+      return new Date(p.tanggal_kembali_aktual).toDateString() === globalDate.toDateString();
+    }
+    return false;
   });
 
   return (
@@ -63,7 +62,7 @@ const ReturnsPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -84,20 +83,6 @@ const ReturnsPage: React.FC = () => {
             </div>
             <div className="p-3 rounded-full bg-green-100">
               <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Terlambat</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">
-                {activeLoans.filter(p => p.status_peminjaman === 'terlambat').length}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-red-100">
-              <Calendar className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
@@ -166,7 +151,7 @@ const ReturnsPage: React.FC = () => {
               {filteredLoans.map((loan) => {
                 const member = anggota.find(a => a.id_anggota === loan.id_anggota);
                 const book = buku.find(b => b.id_buku === loan.id_buku);
-                const overdue = isOverdue(loan.tanggal_kembali_rencana);
+                const overdue = new Date(loan.tanggal_kembali_rencana) < globalDate && !loan.tanggal_kembali_aktual;
                 const currentFine = calculateFine(loan.tanggal_kembali_rencana);
                 
                 return (
@@ -195,9 +180,6 @@ const ReturnsPage: React.FC = () => {
                       <div className={`text-sm ${overdue ? 'text-red-600' : 'text-gray-900'}`}>
                         {new Date(loan.tanggal_kembali_rencana).toLocaleDateString('id-ID')}
                       </div>
-                      {overdue && (
-                        <div className="text-xs text-red-600">Terlambat</div>
-                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm font-medium ${currentFine > 0 ? 'text-red-600' : 'text-green-600'}`}>

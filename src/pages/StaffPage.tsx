@@ -21,14 +21,16 @@ const StaffPage: React.FC = () => {
   };
 
   const handleUpdateStaff = (staffData: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
-    if (editingStaff) {
+    if (editingStaff && editingStaff.id_petugas) {
       updatePetugas(editingStaff.id_petugas, staffData);
       setEditingStaff(null);
       setShowForm(false);
+    } else {
+      alert('ID petugas tidak valid!');
     }
   };
 
-  const handleDeleteStaff = (id: number) => {
+  const handleDeleteStaff = (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus petugas ini?')) {
       deletePetugas(id, 'Admin');
     }
@@ -89,11 +91,11 @@ const StaffPage: React.FC = () => {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">{staff.nama_petugas}</h3>
                   <p className="text-blue-600 text-sm font-medium mb-3">{staff.jabatan}</p>
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                  <div className="flex items-center text-sm text-gray-500 mb-2" key={`phone-${staff.id_petugas}`}>
                     <Phone className="w-4 h-4 mr-1" />
                     {staff.telepon}
                   </div>
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500" key={`alamat-${staff.id_petugas}`}>
                     <MapPin className="w-4 h-4 mr-1" />
                     <span className="line-clamp-2">{staff.alamat}</span>
                   </div>
@@ -107,6 +109,7 @@ const StaffPage: React.FC = () => {
 
               <div className="flex space-x-2">
                 <button
+                  key={`edit-${staff.id_petugas}`}
                   onClick={() => handleEdit(staff)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                 >
@@ -114,6 +117,7 @@ const StaffPage: React.FC = () => {
                   Edit
                 </button>
                 <button
+                  key={`delete-${staff.id_petugas}`}
                   onClick={() => handleDeleteStaff(staff.id_petugas)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                 >

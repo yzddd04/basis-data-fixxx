@@ -34,25 +34,30 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Auto-update overdue loans
   useEffect(() => {
-    const updateOverdueLoans = () => {
+    const updateOverdueLoans = async () => {
       const today = globalDate;
-      setPeminjaman(prev => prev.map(loan => {
+      let updated = false;
+      for (const loan of peminjaman) {
         if (loan.status_peminjaman === 'dipinjam') {
           const dueDate = new Date(loan.tanggal_kembali_rencana);
           if (today > dueDate) {
             const daysDiff = Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-            return {
-              ...loan,
-              status_peminjaman: 'terlambat' as const,
+            // Update ke backend jika belum terlambat
+            await updatePeminjaman(loan.id_peminjaman, {
+              status_peminjaman: 'terlambat',
               denda: daysDiff * 1000,
-              updated_at: today.toISOString()
-            };
+              updated_at: today.toISOString(),
+            });
+            updated = true;
           }
         }
-        return loan;
-      }));
+      }
+      // Jika ada yang diupdate, fetch ulang data dari backend
+      if (updated) {
+        const res = await axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman');
+        setPeminjaman(res.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
+      }
     };
-
     updateOverdueLoans();
   }, [globalDate]);
 
@@ -102,7 +107,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return `AGT${number}`;
   };
 
-  const moveToTrash = (tableName: string, dataId: number, data: any, deletedBy: string) => {
+  const moveToTrash = (tableName: string, dataId: string, data: any, deletedBy: string) => {
     const trashItem: Sampah = {
       id_sampah: nextSampahId++,
       nama_tabel: tableName,
@@ -156,7 +161,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const restoreBuku = (id: number) => {
+  const restoreBuku = (id: string) => {
     setBuku(prev => prev.map(item => 
       item.id_buku === id 
         ? { ...item, is_deleted: false, updated_at: new Date().toISOString() }
@@ -175,7 +180,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const updateAnggota = async (id: number, updates: Partial<Anggota>) => {
+  const updateAnggota = async (id: string, updates: Partial<Anggota>) => {
     try {
       await axios.put(`http://localhost:5050/api/anggota/${id}`, updates);
       const res = await axios.get<Anggota[]>('http://localhost:5050/api/anggota');
@@ -185,17 +190,27 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const deleteAnggota = async (id: number, deletedBy: string) => {
+  const deleteAnggota = async (id: string, deletedBy: string) => {
+    if (!id || typeof id !== 'string') {
+      alert('ID anggota tidak valid!');
+      return;
+    }
     try {
+      // Cari data anggota sebelum dihapus
+      const anggotaToDelete = anggota.find(a => a.id_anggota === id);
       await axios.delete(`http://localhost:5050/api/anggota/${id}`);
       const res = await axios.get<Anggota[]>('http://localhost:5050/api/anggota');
       setAnggota(res.data);
+      // Masukkan ke sampah jika data ditemukan
+      if (anggotaToDelete) {
+        moveToTrash('anggota', id, anggotaToDelete, deletedBy);
+      }
     } catch (err) {
       alert('Gagal hapus anggota: ' + (err as Error).message);
     }
   };
 
-  const restoreAnggota = (id: number) => {
+  const restoreAnggota = (id: string) => {
     setAnggota(prev => prev.map(item => 
       item.id_anggota === id 
         ? { ...item, is_deleted: false, updated_at: new Date().toISOString() }
@@ -214,7 +229,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const updatePetugas = async (id: number, updates: Partial<Petugas>) => {
+  const updatePetugas = async (id: string, updates: Partial<Petugas>) => {
     try {
       await axios.put(`http://localhost:5050/api/petugas/${id}`, updates);
       const res = await axios.get<Petugas[]>('http://localhost:5050/api/petugas');
@@ -224,17 +239,27 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const deletePetugas = async (id: number, deletedBy: string) => {
+  const deletePetugas = async (id: string, deletedBy: string) => {
+    if (!id || typeof id !== 'string') {
+      alert('ID petugas tidak valid!');
+      return;
+    }
     try {
+      // Cari data petugas sebelum dihapus
+      const petugasToDelete = petugas.find(p => p.id_petugas === id);
       await axios.delete(`http://localhost:5050/api/petugas/${id}`);
-      const res = await axios.get<Petugas[]>('http://localhost:5050/api/petugas');
-      setPetugas(res.data);
+      const res = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
+      setPetugas(res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
+      // Masukkan ke sampah jika data ditemukan
+      if (petugasToDelete) {
+        moveToTrash('petugas', id, petugasToDelete, deletedBy);
+      }
     } catch (err) {
       alert('Gagal hapus petugas: ' + (err as Error).message);
     }
   };
 
-  const restorePetugas = (id: number) => {
+  const restorePetugas = (id: string) => {
     setPetugas(prev => prev.map(item => 
       item.id_petugas === id 
         ? { ...item, is_deleted: false, updated_at: new Date().toISOString() }
@@ -246,8 +271,12 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addPeminjaman = async (newPeminjaman: Omit<Peminjaman, 'id_peminjaman' | 'created_at' | 'updated_at'>) => {
     try {
       await axios.post('http://localhost:5050/api/peminjaman', newPeminjaman);
-      const res = await axios.get<Peminjaman[]>('http://localhost:5050/api/peminjaman');
-      setPeminjaman(res.data);
+      // Fetch ulang data peminjaman
+      const res = await axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman');
+      setPeminjaman(res.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
+      // Fetch ulang data buku agar stok update
+      const resBuku = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
+      setBuku(resBuku.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
     } catch (err) {
       alert('Gagal menambah peminjaman: ' + (err as Error).message);
     }
@@ -263,24 +292,26 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const processReturn = (id_peminjaman: string, tanggal_kembali: string) => {
+  const processReturn = async (id_peminjaman: string, tanggal_kembali: string) => {
     const loan = peminjaman.find(p => p.id_peminjaman === id_peminjaman);
     if (!loan) return;
 
     const fine = calculateFine(loan.tanggal_kembali_rencana, tanggal_kembali);
-    
     // Update loan status
-    updatePeminjaman(id_peminjaman, {
+    await updatePeminjaman(id_peminjaman, {
       tanggal_kembali_aktual: tanggal_kembali,
+      tanggal_kembali_rencana: loan.tanggal_kembali_rencana,
       status_peminjaman: 'dikembalikan',
       denda: fine
     });
-
     // Update book stock
     const book = buku.find(b => b.id_buku === loan.id_buku);
     if (book) {
-      updateBuku(loan.id_buku, { jumlah_stok: book.jumlah_stok + 1 });
+      await updateBuku(loan.id_buku, { jumlah_stok: book.jumlah_stok + 1 });
     }
+    // Fetch ulang data buku agar stok update di dropdown
+    const resBuku = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
+    setBuku(resBuku.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
   };
 
   const calculateFine = (tanggal_rencana: string, tanggal_aktual: string): number => {
@@ -297,8 +328,11 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getBukuById = (id: string) => buku.find(b => b.id_buku === id);
   const getAnggotaById = (id: string) => anggota.find(a => a.id_anggota === id);
   const getPetugasById = (id: string) => petugas.find(p => p.id_petugas === id);
-  const getActivePeminjamanByAnggota = (id_anggota: string) => 
-    peminjaman.filter(p => p.id_anggota === id_anggota && p.status_peminjaman === 'dipinjam');
+  const getActivePeminjamanByAnggota = (id_anggota: string) =>
+    peminjaman.filter(p =>
+      p.id_anggota === id_anggota &&
+      !p.tanggal_kembali_aktual
+    );
 
   // Trash operations
   const restoreFromTrash = async (id_sampah: number) => {
@@ -306,24 +340,24 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!trashItem) return;
     const data = JSON.parse(trashItem.data_backup);
     try {
-      switch (trashItem.nama_tabel) {
-        case 'buku':
+    switch (trashItem.nama_tabel) {
+      case 'buku':
           await axios.put(`http://localhost:5050/api/buku/${data.id_buku}`, { is_deleted: false });
           const bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
           setBuku(bukuRes.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
-          break;
-        case 'anggota':
+        break;
+      case 'anggota':
           await axios.put(`http://localhost:5050/api/anggota/${data.id_anggota}`, { is_deleted: false });
           const anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
           setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
-          break;
-        case 'petugas':
+        break;
+      case 'petugas':
           await axios.put(`http://localhost:5050/api/petugas/${data.id_petugas}`, { is_deleted: false });
           const petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
           setPetugas(petugasRes.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
-          break;
-      }
-      setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));
+        break;
+    }
+    setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));
     } catch (err) {
       alert('Gagal memulihkan data: ' + (err as Error).message);
     }
@@ -333,22 +367,28 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const trashItem = sampah.find(s => s.id_sampah === id_sampah);
     if (!trashItem) return;
     const data = JSON.parse(trashItem.data_backup);
+    let bukuRes, anggotaRes, petugasRes, peminjamanRes;
     try {
       switch (trashItem.nama_tabel) {
         case 'buku':
-          await axios.delete(`http://localhost:5050/api/buku/${data.id_buku}`);
-          const bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
+          await axios.delete(`http://localhost:5050/api/buku/permanent/${data.id_buku}`);
+          bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
           setBuku(bukuRes.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
           break;
         case 'anggota':
-          await axios.delete(`http://localhost:5050/api/anggota/${data.id_anggota}`);
-          const anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
+          await axios.delete(`http://localhost:5050/api/anggota/permanent/${data.id_anggota}`);
+          anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
           setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
           break;
         case 'petugas':
-          await axios.delete(`http://localhost:5050/api/petugas/${data.id_petugas}`);
-          const petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
+          await axios.delete(`http://localhost:5050/api/petugas/permanent/${data.id_petugas}`);
+          petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
           setPetugas(petugasRes.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
+          break;
+        case 'peminjaman':
+          await axios.delete(`http://localhost:5050/api/peminjaman/permanent/${data.id_peminjaman}`);
+          peminjamanRes = await axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman');
+          setPeminjaman(peminjamanRes.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
           break;
       }
       setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));

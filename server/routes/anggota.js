@@ -15,6 +15,12 @@ router.get('/:id', async (req, res) => {
   res.json(anggota);
 });
 
+// GET semua anggota (termasuk yang soft delete)
+router.get('/all', async (req, res) => {
+  const anggota = await Anggota.find();
+  res.json(anggota);
+});
+
 // POST tambah anggota
 router.post('/', async (req, res) => {
   try {
@@ -49,6 +55,13 @@ router.delete('/:id', async (req, res) => {
   );
   if (!anggota) return res.status(404).json({ message: 'Anggota tidak ditemukan' });
   res.json({ message: 'Anggota dihapus' });
+});
+
+// DELETE permanent anggota
+router.delete('/permanent/:id', async (req, res) => {
+  const anggota = await Anggota.findByIdAndDelete(req.params.id);
+  if (!anggota) return res.status(404).json({ message: 'Anggota tidak ditemukan' });
+  res.json({ message: 'Anggota dihapus permanen' });
 });
 
 module.exports = router; 

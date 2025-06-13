@@ -1,0 +1,21 @@
+body, #root {
+  background-color: #f9fafb !important; /* tailwind gray-50, override jika ada warna lain */
+}
+
+/* Jika ada modal open, pastikan tidak ada overlay orange */
+.modal-open {
+  background-color: #f9fafb !important;
+}
+
+.modal-overlay, .fixed.inset-0.bg-gray-900.bg-opacity-50 {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(17, 24, 39, 0.5) !important; /* tailwind bg-gray-900 bg-opacity-50 */
+  z-index: 1000;
+}
+
+body.modal-open {
+  overflow: hidden;
+} 

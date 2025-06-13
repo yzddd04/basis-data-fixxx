@@ -9,6 +9,8 @@ const PeminjamanSchema = new mongoose.Schema({
   tanggal_kembali_aktual: String,
   status_peminjaman: { type: String, enum: ['dipinjam', 'dikembalikan', 'terlambat'], default: 'dipinjam' },
   denda: { type: Number, default: 0 },
+  hari_terlambat: { type: Number, default: 0 },
+  terlambat: { type: Boolean, default: false },
   catatan: String,
   is_deleted: { type: Boolean, default: false },
   created_at: { type: Date, default: Date.now },

@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
-import { useLibrary } from '../context/LibraryContext';
+import { useLibrary, useGlobalDate } from '../context/LibraryContext';
 import { Plus, Search, Book, User, Calendar, AlertCircle } from 'lucide-react';
 import BorrowingForm from '../components/borrowing/BorrowingForm';
 
 const BorrowingPage: React.FC = () => {
   const { peminjaman, buku, anggota, petugas } = useLibrary();
+  const { globalDate } = useGlobalDate();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const activeLoans = peminjaman.filter(p => p.status_peminjaman === 'dipinjam' || p.status_peminjaman === 'terlambat');
+  const isLoanLate = (loan, globalDate) => {
+    const due = new Date(loan.tanggal_kembali_rencana);
+    const now = globalDate ? globalDate : new Date();
+    return now > due && !loan.tanggal_kembali_aktual;
+  };
+
+  // Ganti activeLoans agar hanya yang belum dikembalikan
+  const activeLoans = peminjaman.filter(p => !p.tanggal_kembali_aktual);
   
   const filteredLoans = activeLoans.filter(loan => {
     const member = anggota.find(a => a.id_anggota === loan.id_anggota);
@@ -37,6 +45,16 @@ const BorrowingPage: React.FC = () => {
     return diffDays;
   };
 
+  const getLateDays = (loan, globalDate) => {
+    const due = new Date(loan.tanggal_kembali_rencana);
+    const now = globalDate ? globalDate : new Date();
+    if (now > due) {
+      const diffTime = now.getTime() - due.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    return 0;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -55,13 +73,13 @@ const BorrowingPage: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Peminjaman Aktif</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">
-                {activeLoans.filter(p => p.status_peminjaman === 'dipinjam').length}
+                {activeLoans.length}
               </p>
             </div>
             <div className="p-3 rounded-full bg-blue-100">
@@ -75,7 +93,7 @@ const BorrowingPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Terlambat</p>
               <p className="text-3xl font-bold text-red-600 mt-2">
-                {activeLoans.filter(p => p.status_peminjaman === 'terlambat').length}
+                {activeLoans.filter(loan => isLoanLate(loan, globalDate)).length}
               </p>
             </div>
             <div className="p-3 rounded-full bg-red-100">
@@ -89,11 +107,30 @@ const BorrowingPage: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Denda</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">
-                Rp {activeLoans.reduce((sum, p) => sum + p.denda, 0).toLocaleString('id-ID')}
+                Rp {activeLoans.reduce((sum, loan) => {
+                  if (isLoanLate(loan, globalDate)) {
+                    return sum + getLateDays(loan, globalDate) * 1000;
+                  }
+                  return sum + (loan.denda || 0);
+                }, 0).toLocaleString('id-ID')}
               </p>
             </div>
             <div className="p-3 rounded-full bg-orange-100">
               <Calendar className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Hari Terlambat</p>
+              <p className="text-3xl font-bold text-pink-600 mt-2">
+                {activeLoans.reduce((sum, loan) => sum + (isLoanLate(loan, globalDate) ? getLateDays(loan, globalDate) : 0), 0)}
+              </p>
+            </div>
+            <div className="p-3 rounded-full bg-pink-100">
+              <AlertCircle className="w-6 h-6 text-pink-600" />
             </div>
           </div>
         </div>
@@ -149,7 +186,7 @@ const BorrowingPage: React.FC = () => {
                 const member = anggota.find(a => a.id_anggota === loan.id_anggota);
                 const book = buku.find(b => b.id_buku === loan.id_buku);
                 const daysRemaining = getDaysRemaining(loan.tanggal_kembali_rencana);
-                const overdue = isOverdue(loan.tanggal_kembali_rencana);
+                const overdue = isLoanLate(loan, globalDate);
                 
                 return (
                   <tr key={loan.id_peminjaman} className="hover:bg-gray-50">
@@ -178,24 +215,26 @@ const BorrowingPage: React.FC = () => {
                         {new Date(loan.tanggal_kembali_rencana).toLocaleDateString('id-ID')}
                       </div>
                       <div className={`text-xs ${overdue ? 'text-red-600' : daysRemaining <= 2 ? 'text-orange-600' : 'text-green-600'}`}>
-                        {overdue ? `Terlambat ${Math.abs(daysRemaining)} hari` : 
+                        {overdue ? `Terlambat ${getLateDays(loan, globalDate)} hari` : 
                          daysRemaining === 0 ? 'Jatuh tempo hari ini' :
                          `${daysRemaining} hari lagi`}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        loan.status_peminjaman === 'terlambat' 
+                        overdue
                           ? 'bg-red-100 text-red-800'
-                          : overdue
+                          : daysRemaining <= 2
                           ? 'bg-orange-100 text-orange-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {loan.status_peminjaman === 'terlambat' ? 'Terlambat' : 'Dipinjam'}
+                        {overdue ? 'Terlambat' : 'Dipinjam'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {loan.denda > 0 ? `Rp ${loan.denda.toLocaleString('id-ID')}` : '-'}
+                      {overdue
+                        ? `Rp ${(getLateDays(loan, globalDate) * 1000).toLocaleString('id-ID')}`
+                        : (loan.denda > 0 ? `Rp ${loan.denda.toLocaleString('id-ID')}` : '-')}
                     </td>
                   </tr>
                 );

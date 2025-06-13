@@ -33,7 +33,7 @@ const TrashPage: React.FC = () => {
         case 'buku':
           return `${data.judul_buku} - ${data.pengarang}`;
         case 'anggota':
-          return `${data.nama_lengkap} (${data.nomor_anggota})`;
+          return `${data.nama_lengkap}${data.nomor_anggota ? ' (' + data.nomor_anggota + ')' : ''}`;
         case 'petugas':
           return `${data.nama_petugas} - ${data.jabatan}`;
         default:

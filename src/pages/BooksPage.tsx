@@ -5,7 +5,7 @@ import BookForm from '../components/books/BookForm';
 import { Buku } from '../types';
 
 const BooksPage: React.FC = () => {
-  const { buku, addBuku, updateBuku, deleteBuku } = useLibrary();
+  const { buku, addBuku, updateBuku, deleteBuku, peminjaman } = useLibrary();
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState<Buku | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,6 +54,12 @@ const BooksPage: React.FC = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingBook(null);
+  };
+
+  // Hitung stok total buku
+  const getTotalStock = (book: Buku) => {
+    const dipinjam = peminjaman.filter(p => p.id_buku === book.id_buku && !p.tanggal_kembali_aktual).length;
+    return book.jumlah_stok + dipinjam;
   };
 
   return (
@@ -131,7 +137,9 @@ const BooksPage: React.FC = () => {
                   }`}>
                     {book.jumlah_stok > 0 ? 'Tersedia' : 'Habis'}
                   </span>
-                  <span className="text-sm text-gray-600 mt-1">Stok: {book.jumlah_stok}</span>
+                  <span className="text-sm text-gray-600 mt-1">
+                    Stok: {book.jumlah_stok}/{getTotalStock(book)}
+                  </span>
                 </div>
               </div>
               

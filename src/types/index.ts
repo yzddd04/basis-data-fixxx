@@ -62,7 +62,7 @@ export interface Peminjaman {
 export interface Sampah {
   id_sampah: number;
   nama_tabel: string;
-  id_data_asli: number;
+  id_data_asli: string;
   data_backup: string;
   dihapus_oleh: string;
   tanggal_dihapus: string;
@@ -130,6 +130,9 @@ export interface LibraryContextType {
   getAnggotaById: (id: string) => Anggota | undefined;
   getPetugasById: (id: string) => Petugas | undefined;
   getActivePeminjamanByAnggota: (id_anggota: string) => Peminjaman[];
+
+  // Global date untuk simulasi
+  globalDate: Date;
 
   // Trash operations
   restoreFromTrash: (id_sampah: number) => void;

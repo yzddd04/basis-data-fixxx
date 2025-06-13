@@ -9,7 +9,7 @@ interface BorrowingFormProps {
 }
 
 const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => {
-  const { buku, anggota, petugas, addPeminjaman, getActivePeminjamanByAnggota } = useLibrary();
+  const { buku, anggota, petugas, addPeminjaman, peminjaman } = useLibrary();
   const [selectedMember, setSelectedMember] = useState<Anggota | null>(null);
   const [selectedBook, setSelectedBook] = useState<Buku | null>(null);
   const [selectedStaff, setSelectedStaff] = useState(petugas[0]?.id_petugas || '');
@@ -33,11 +33,11 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
     (member.nomor_anggota?.toLowerCase() || '').includes(memberSearch.toLowerCase())
   );
 
-  const availableBooks = buku.filter(book => book.jumlah_stok > 0);
-  const filteredBooks = availableBooks.filter(book =>
-    (book.judul_buku?.toLowerCase() || '').includes(bookSearch.toLowerCase()) ||
-    (book.pengarang?.toLowerCase() || '').includes(bookSearch.toLowerCase()) ||
-    (book.isbn || '').includes(bookSearch)
+  const filteredBooks = buku.filter(book =>
+    book.jumlah_stok > 0 &&
+    ((book.judul_buku?.toLowerCase() || '').includes(bookSearch.toLowerCase()) ||
+      (book.pengarang?.toLowerCase() || '').includes(bookSearch.toLowerCase()) ||
+      (book.isbn || '').includes(bookSearch))
   );
 
   const totalDays = borrowDate && returnDate ?
@@ -46,16 +46,11 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!selectedMember) {
+    if (!selectedMember || !selectedMember.id_anggota) {
       newErrors.member = 'Anggota harus dipilih';
-    } else {
-      const activeLoans = getActivePeminjamanByAnggota(selectedMember.id_anggota);
-      if (activeLoans.length >= 3) {
-        newErrors.member = 'Anggota sudah mencapai batas maksimal peminjaman (3 buku)';
-      }
     }
 
-    if (!selectedBook) {
+    if (!selectedBook || !selectedBook.id_buku) {
       newErrors.book = 'Buku harus dipilih';
     }
 
@@ -76,10 +71,19 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
     
     if (!validateForm()) return;
 
+    if (!selectedMember?.id_anggota || !selectedBook?.id_buku || !selectedStaff) {
+      setErrors({
+        member: !selectedMember?.id_anggota ? 'Anggota harus dipilih' : '',
+        book: !selectedBook?.id_buku ? 'Buku harus dipilih' : '',
+        staff: !selectedStaff ? 'Petugas harus dipilih' : '',
+      });
+      return;
+    }
+
     try {
       const borrowingData = {
-        id_anggota: selectedMember?.id_anggota || '',
-        id_buku: selectedBook?.id_buku || '',
+        id_anggota: selectedMember.id_anggota,
+        id_buku: selectedBook.id_buku,
         id_petugas: selectedStaff,
         tanggal_pinjam: borrowDate,
         tanggal_kembali_rencana: returnDate,
@@ -112,6 +116,12 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
     if (errors.book) {
       setErrors(prev => ({ ...prev, book: '' }));
     }
+  };
+
+  // Fungsi untuk hitung total stok buku (tersedia + sedang dipinjam)
+  const getTotalStock = (book: Buku) => {
+    const dipinjam = peminjaman.filter(p => p.id_buku === book.id_buku && !p.tanggal_kembali_aktual && (p.status_peminjaman === 'dipinjam' || p.status_peminjaman === 'terlambat')).length;
+    return book.jumlah_stok + dipinjam;
   };
 
   return (
@@ -159,7 +169,6 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
             {showMemberList && filteredMembers.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {filteredMembers.map((member) => {
-                  const activeLoans = getActivePeminjamanByAnggota(member.id_anggota);
                   return (
                     <div
                       key={member.id_anggota}
@@ -171,7 +180,7 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
                         <div>
                           <div className="font-medium text-gray-900">{member.nama_lengkap}</div>
                           <div className="text-sm text-gray-500">
-                            {member.nomor_anggota} • {activeLoans.length}/3 peminjaman aktif
+                            {member.nomor_anggota}
                           </div>
                         </div>
                       </div>
@@ -223,7 +232,7 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
                       <div>
                         <div className="font-medium text-gray-900">{book.judul_buku}</div>
                         <div className="text-sm text-gray-500">
-                          {book.pengarang} • Stok: {book.jumlah_stok} • {book.lokasi_rak}
+                          {book.pengarang} • Stok: {book.jumlah_stok}/{getTotalStock(book)} • {book.lokasi_rak}
                         </div>
                       </div>
                     </div>
@@ -271,8 +280,12 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
                   onChange={(e) => {
                     setBorrowDate(e.target.value);
                     const d = new Date(e.target.value);
-                    d.setDate(d.getDate() + totalDays);
-                    setReturnDate(d.toISOString().split('T')[0]);
+                    if (!isNaN(d.getTime())) {
+                      d.setDate(d.getDate() + totalDays);
+                      setReturnDate(d.toISOString().split('T')[0]);
+                    } else {
+                      setReturnDate('');
+                    }
                   }}
                   className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                     errors.borrowDate ? 'border-red-300' : 'border-gray-300'

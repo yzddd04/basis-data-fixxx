@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLibrary } from '../context/LibraryContext';
-import { BarChart3, Download, Calendar, TrendingUp, Users, Book } from 'lucide-react';
+import { BarChart3, Download } from 'lucide-react';
 
 const ReportsPage: React.FC = () => {
   const { buku, anggota, peminjaman } = useLibrary();
@@ -10,11 +10,20 @@ const ReportsPage: React.FC = () => {
     end: new Date().toISOString().split('T')[0]
   });
 
+  // Helper: loan is late if denda > 0 (pastikan denda tidak null/undefined)
+  const isLate = (p: import('../types').Peminjaman) => typeof p.denda === 'number' && p.denda > 0;
+
+  // Helper: check if loan is returned late
+  const isReturnedLate = (p: import('../types').Peminjaman) => 
+    p.status_peminjaman === 'dikembalikan' && isLate(p);
+
   // Popular Books Report
   const getPopularBooks = () => {
     const bookStats = buku.map(book => {
       const loanCount = peminjaman.filter(p => 
         p.id_buku === book.id_buku &&
+        !p.is_deleted &&
+        (p.status_peminjaman === 'dikembalikan' || isReturnedLate(p)) &&
         new Date(p.tanggal_pinjam) >= new Date(dateRange.start) &&
         new Date(p.tanggal_pinjam) <= new Date(dateRange.end)
       ).length;
@@ -30,26 +39,29 @@ const ReportsPage: React.FC = () => {
 
   // Active Members Report
   const getActiveMembers = () => {
-    const memberStats = anggota.map(member => {
+    // Hanya anggota yang tidak dihapus
+    const activeMembers = anggota.filter(member => !member.is_deleted);
+    return activeMembers.map(member => {
+      // Hitung semua peminjaman selesai (dikembalikan/dikembalikan dengan terlambat) milik anggota ini
       const loans = peminjaman.filter(p => 
         p.id_anggota === member.id_anggota &&
+        !p.is_deleted &&
+        (p.status_peminjaman === 'dikembalikan' || isReturnedLate(p)) &&
         new Date(p.tanggal_pinjam) >= new Date(dateRange.start) &&
         new Date(p.tanggal_pinjam) <= new Date(dateRange.end)
       );
-      
+      // Hitung peminjaman aktif (belum dikembalikan)
       const activeLoans = peminjaman.filter(p => 
         p.id_anggota === member.id_anggota &&
+        !p.is_deleted &&
         p.status_peminjaman === 'dipinjam'
       ).length;
-      
       return {
         ...member,
         jumlah_peminjaman: loans.length,
         status_peminjaman_aktif: activeLoans
       };
     }).sort((a, b) => b.jumlah_peminjaman - a.jumlah_peminjaman);
-    
-    return memberStats.slice(0, 10);
   };
 
   // Monthly Trends
@@ -64,7 +76,9 @@ const ReportsPage: React.FC = () => {
       
       const monthLoans = peminjaman.filter(p => {
         const loanDate = new Date(p.tanggal_pinjam);
-        return loanDate >= monthStart && loanDate <= monthEnd;
+        return !p.is_deleted &&
+          (p.status_peminjaman === 'dikembalikan' || isReturnedLate(p)) &&
+          loanDate >= monthStart && loanDate <= monthEnd;
       }).length;
       
       months.push({
@@ -78,13 +92,16 @@ const ReportsPage: React.FC = () => {
 
   // Overdue Report
   const getOverdueReport = () => {
-    const overdueLoans = peminjaman.filter(p => p.status_peminjaman === 'terlambat');
-    
+    const overdueLoans = peminjaman.filter(p => 
+      !p.is_deleted &&
+      isReturnedLate(p) &&
+      new Date(p.tanggal_kembali_rencana) >= new Date(dateRange.start) &&
+      new Date(p.tanggal_kembali_rencana) <= new Date(dateRange.end)
+    );
     return overdueLoans.map(loan => {
       const member = anggota.find(a => a.id_anggota === loan.id_anggota);
       const book = buku.find(b => b.id_buku === loan.id_buku);
-      const daysOverdue = Math.ceil((new Date().getTime() - new Date(loan.tanggal_kembali_rencana).getTime()) / (1000 * 60 * 60 * 24));
-      
+      const daysOverdue = Math.ceil((new Date(loan.tanggal_kembali_aktual!).getTime() - new Date(loan.tanggal_kembali_rencana).getTime()) / (1000 * 60 * 60 * 24));
       return {
         ...loan,
         member,
@@ -229,12 +246,10 @@ const ReportsPage: React.FC = () => {
                   {popularBooks.map((book, index) => (
                     <tr key={book.id_buku} className="border-b border-gray-100">
                       <td className="py-3 px-4">
-                        <div className="flex items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                            index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
-                          }`}>
-                            {index + 1}
-                          </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                          index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'
+                        }`}>
+                          {index + 1}
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium text-gray-900">{book.judul_buku}</td>
@@ -255,6 +270,10 @@ const ReportsPage: React.FC = () => {
           {/* Active Members Report */}
           {selectedReport === 'active-members' && (
             <div className="overflow-x-auto">
+              {/* Tambahkan total peminjaman di atas tabel */}
+              <div className="mb-4 text-right text-sm text-gray-600">
+                Total peminjaman (periode ini): <span className="font-bold text-blue-600">{activeMembers.reduce((sum, m) => sum + m.jumlah_peminjaman, 0)}</span>
+              </div>
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -277,16 +296,10 @@ const ReportsPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="py-3 px-4 font-medium text-gray-900">{member.nama_lengkap}</td>
-                      <td className="py-3 px-4 text-blue-600">{member.nomor_anggota}</td>
-                      <td className="py-3 px-4 text-gray-600">{member.email}</td>
-                      <td className="py-3 px-4 font-bold text-green-600">{member.jumlah_peminjaman}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          member.status_peminjaman_aktif > 0 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-                        }`}>
-                          {member.status_peminjaman_aktif}
-                        </span>
-                      </td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{member.nomor_anggota}</td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{member.email}</td>
+                      <td className="py-3 px-4 font-bold text-blue-600">{member.jumlah_peminjaman}</td>
+                      <td className="py-3 px-4 font-bold text-blue-600">{member.status_peminjaman_aktif}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -296,105 +309,53 @@ const ReportsPage: React.FC = () => {
 
           {/* Monthly Trends */}
           {selectedReport === 'monthly-trends' && (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {monthlyTrends.map((month, index) => (
-                  <div key={index} className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-blue-800">{month.month}</p>
-                        <p className="text-2xl font-bold text-blue-600">{month.loans}</p>
-                        <p className="text-xs text-blue-600">peminjaman</p>
-                      </div>
-                      <TrendingUp className="w-8 h-8 text-blue-500" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Ringkasan Tren</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-green-600">
-                      {monthlyTrends.reduce((sum, month) => sum + month.loans, 0)}
-                    </p>
-                    <p className="text-sm text-gray-600">Total Peminjaman</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {Math.round(monthlyTrends.reduce((sum, month) => sum + month.loans, 0) / monthlyTrends.length)}
-                    </p>
-                    <p className="text-sm text-gray-600">Rata-rata per Bulan</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-600">
-                      {Math.max(...monthlyTrends.map(m => m.loans))}
-                    </p>
-                    <p className="text-sm text-gray-600">Puncak Peminjaman</p>
-                  </div>
-                </div>
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Bulan</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Jumlah Peminjaman</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthlyTrends.map((trend, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-3 px-4 font-medium text-gray-900">{trend.month}</td>
+                      <td className="py-3 px-4 font-bold text-blue-600">{trend.loans}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
           {/* Overdue Report */}
           {selectedReport === 'overdue' && (
-            <div>
-              {overdueReport.length === 0 ? (
-                <div className="text-center py-12">
-                  <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada keterlambatan</h3>
-                  <p className="text-gray-600">Semua peminjaman dikembalikan tepat waktu</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Anggota</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Buku</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Tanggal Pinjam</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Jatuh Tempo</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Hari Terlambat</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Denda</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {overdueReport.map((item) => (
-                        <tr key={item.id_peminjaman} className="border-b border-gray-100">
-                          <td className="py-3 px-4">
-                            <div>
-                              <div className="font-medium text-gray-900">{item.member?.nama_lengkap}</div>
-                              <div className="text-sm text-gray-500">{item.member?.nomor_anggota}</div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div>
-                              <div className="font-medium text-gray-900">{item.book?.judul_buku}</div>
-                              <div className="text-sm text-gray-500">{item.book?.pengarang}</div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-gray-600">
-                            {new Date(item.tanggal_pinjam).toLocaleDateString('id-ID')}
-                          </td>
-                          <td className="py-3 px-4 text-red-600">
-                            {new Date(item.tanggal_kembali_rencana).toLocaleDateString('id-ID')}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                              {item.days_overdue} hari
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 font-bold text-red-600">
-                            Rp {item.denda.toLocaleString('id-ID')}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Nama Anggota</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Judul Buku</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Tanggal Pinjam</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Jatuh Tempo</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Hari Terlambat</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">Denda</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {overdueReport.map((item, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="py-3 px-4 font-medium text-gray-900">{item.member?.nama_lengkap}</td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{item.book?.judul_buku}</td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{item.tanggal_pinjam}</td>
+                      <td className="py-3 px-4 font-medium text-gray-900">{item.tanggal_kembali_rencana}</td>
+                      <td className="py-3 px-4 font-bold text-blue-600">{item.days_overdue}</td>
+                      <td className="py-3 px-4 font-bold text-blue-600">{item.denda.toLocaleString('id-ID')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

@@ -25,14 +25,16 @@ const MembersPage: React.FC = () => {
   };
 
   const handleUpdateMember = (memberData: Omit<Anggota, 'id_anggota' | 'nomor_anggota' | 'created_at' | 'updated_at'>) => {
-    if (editingMember) {
+    if (editingMember && editingMember.id_anggota) {
       updateAnggota(editingMember.id_anggota, memberData);
       setEditingMember(null);
       setShowForm(false);
+    } else {
+      alert('ID anggota tidak valid!');
     }
   };
 
-  const handleDeleteMember = (id: number) => {
+  const handleDeleteMember = (id: string) => {
     if (confirm('Apakah Anda yakin ingin menghapus anggota ini?')) {
       try {
         deleteAnggota(id, 'Admin');
@@ -89,9 +91,9 @@ const MembersPage: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Semua Status</option>
-              <option value="aktif">Aktif</option>
-              <option value="non-aktif">Non-Aktif</option>
+              <option key="all" value="">Semua Status</option>
+              <option key="aktif" value="aktif">Aktif</option>
+              <option key="non-aktif" value="non-aktif">Non-Aktif</option>
             </select>
           </div>
           <div key="member-count" className="text-sm text-gray-600 flex items-center">
@@ -117,7 +119,7 @@ const MembersPage: React.FC = () => {
                     <Phone className="w-4 h-4 mr-1" />
                     {member.telepon}
                   </div>
-                  <div className="flex items-center text-sm text-gray-500" key={`date-${member.id_anggota}`}>
+                  <div className="flex items-center text-sm text-gray-500" key={`join-${member.id_anggota}`}>
                     <Calendar className="w-4 h-4 mr-1" />
                     Bergabung: {new Date(member.tanggal_daftar).toLocaleDateString('id-ID')}
                   </div>
@@ -133,23 +135,23 @@ const MembersPage: React.FC = () => {
                 </div>
               </div>
               
-              <div className="mb-4" key={`address-${member.id_anggota}`}>
+              <div className="mb-4">
                 <p className="text-sm text-gray-600 line-clamp-2">{member.alamat}</p>
               </div>
 
               <div className="flex space-x-2">
                 <button
+                  key={`edit-${member.id_anggota}`}
                   onClick={() => handleEdit(member)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                  key={`edit-${member.id_anggota}`}
                 >
                   <Edit className="w-4 h-4 mr-1" />
                   Edit
                 </button>
                 <button
+                  key={`delete-${member.id_anggota}`}
                   onClick={() => handleDeleteMember(member.id_anggota)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                  key={`delete-${member.id_anggota}`}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   Hapus

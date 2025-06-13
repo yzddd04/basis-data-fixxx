@@ -2,7 +2,7 @@ import { Buku, Anggota, Petugas, Peminjaman } from '../types';
 
 export const mockBuku: Buku[] = [
   {
-    id_buku: 1,
+    id_buku: '1',
     judul_buku: "Laskar Pelangi",
     pengarang: "Andrea Hirata",
     penerbit: "Bentang Pustaka",
@@ -16,7 +16,7 @@ export const mockBuku: Buku[] = [
     updated_at: "2024-01-15T08:00:00Z"
   },
   {
-    id_buku: 2,
+    id_buku: '2',
     judul_buku: "Bumi Manusia",
     pengarang: "Pramoedya Ananta Toer",
     penerbit: "Lentera Dipantara",
@@ -30,7 +30,7 @@ export const mockBuku: Buku[] = [
     updated_at: "2024-01-15T08:00:00Z"
   },
   {
-    id_buku: 3,
+    id_buku: '3',
     judul_buku: "Algoritma dan Pemrograman",
     pengarang: "Dr. Rinaldi Munir",
     penerbit: "Informatika",
@@ -44,7 +44,7 @@ export const mockBuku: Buku[] = [
     updated_at: "2024-01-15T08:00:00Z"
   },
   {
-    id_buku: 4,
+    id_buku: '4',
     judul_buku: "Sang Pemimpi",
     pengarang: "Andrea Hirata",
     penerbit: "Bentang Pustaka",
@@ -58,7 +58,7 @@ export const mockBuku: Buku[] = [
     updated_at: "2024-01-15T08:00:00Z"
   },
   {
-    id_buku: 5,
+    id_buku: '5',
     judul_buku: "Matematika Diskrit",
     pengarang: "Dr. Munir",
     penerbit: "Informatika",
@@ -75,7 +75,7 @@ export const mockBuku: Buku[] = [
 
 export const mockAnggota: Anggota[] = [
   {
-    id_anggota: 1,
+    id_anggota: '1',
     nama_lengkap: "Ahmad Rizki Pratama",
     nomor_anggota: "AGT001",
     alamat: "Jl. Merdeka No. 123, Jakarta",
@@ -88,7 +88,7 @@ export const mockAnggota: Anggota[] = [
     updated_at: "2024-01-10T08:00:00Z"
   },
   {
-    id_anggota: 2,
+    id_anggota: '2',
     nama_lengkap: "Siti Nurhaliza",
     nomor_anggota: "AGT002",
     alamat: "Jl. Sudirman No. 456, Bandung",
@@ -101,7 +101,7 @@ export const mockAnggota: Anggota[] = [
     updated_at: "2024-01-12T08:00:00Z"
   },
   {
-    id_anggota: 3,
+    id_anggota: '3',
     nama_lengkap: "Budi Santoso",
     nomor_anggota: "AGT003",
     alamat: "Jl. Gatot Subroto No. 789, Surabaya",
@@ -114,7 +114,7 @@ export const mockAnggota: Anggota[] = [
     updated_at: "2024-01-15T08:00:00Z"
   },
   {
-    id_anggota: 4,
+    id_anggota: '4',
     nama_lengkap: "Diana Sari",
     nomor_anggota: "AGT004",
     alamat: "Jl. Thamrin No. 321, Jakarta",
@@ -163,10 +163,10 @@ export const mockPetugas: Petugas[] = [
 
 export const mockPeminjaman: Peminjaman[] = [
   {
-    id_peminjaman: 1,
-    id_anggota: 1,
-    id_buku: 1,
-    id_petugas: 1,
+    id_peminjaman: '1',
+    id_anggota: '1',
+    id_buku: '1',
+    id_petugas: '1',
     tanggal_pinjam: "2024-01-20",
     tanggal_kembali_rencana: "2024-01-27",
     tanggal_kembali_aktual: undefined,
@@ -178,10 +178,10 @@ export const mockPeminjaman: Peminjaman[] = [
     updated_at: "2024-01-20T08:00:00Z"
   },
   {
-    id_peminjaman: 2,
-    id_anggota: 2,
-    id_buku: 2,
-    id_petugas: 2,
+    id_peminjaman: '2',
+    id_anggota: '2',
+    id_buku: '2',
+    id_petugas: '2',
     tanggal_pinjam: "2024-01-15",
     tanggal_kembali_rencana: "2024-01-22",
     tanggal_kembali_aktual: "2024-01-25",
@@ -193,10 +193,10 @@ export const mockPeminjaman: Peminjaman[] = [
     updated_at: "2024-01-25T08:00:00Z"
   },
   {
-    id_peminjaman: 3,
-    id_anggota: 3,
-    id_buku: 3,
-    id_petugas: 1,
+    id_peminjaman: '3',
+    id_anggota: '3',
+    id_buku: '3',
+    id_petugas: '1',
     tanggal_pinjam: "2024-01-18",
     tanggal_kembali_rencana: "2024-01-25",
     tanggal_kembali_aktual: undefined,
@@ -208,10 +208,10 @@ export const mockPeminjaman: Peminjaman[] = [
     updated_at: "2024-01-18T08:00:00Z"
   },
   {
-    id_peminjaman: 4,
-    id_anggota: 4,
-    id_buku: 4,
-    id_petugas: 2,
+    id_peminjaman: '4',
+    id_anggota: '4',
+    id_buku: '4',
+    id_petugas: '2',
     tanggal_pinjam: "2024-01-10",
     tanggal_kembali_rencana: "2024-01-17",
     tanggal_kembali_aktual: undefined,

@@ -1,9 +1,10 @@
 import React from 'react';
-import { useLibrary } from '../context/LibraryContext';
+import { useLibrary, useGlobalDate } from '../context/LibraryContext';
 import { Book, Users, BookOpen, AlertTriangle, DollarSign, TrendingUp } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { getStats, getStatsWithGrowth, peminjaman, buku, anggota } = useLibrary();
+  const { globalDate } = useGlobalDate();
   const stats = getStats();
   const growth = getStatsWithGrowth();
 
@@ -20,6 +21,16 @@ const Dashboard: React.FC = () => {
     }))
     .sort((a, b) => b.loanCount - a.loanCount)
     .slice(0, 3);
+
+  const getLateDays = (loan, globalDate) => {
+    const due = new Date(loan.tanggal_kembali_rencana);
+    const now = globalDate ? globalDate : new Date();
+    if (now > due && !loan.tanggal_kembali_aktual) {
+      const diffTime = now.getTime() - due.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    return 0;
+  };
 
   interface StatCardProps {
     title: string;
@@ -58,7 +69,7 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-600 mt-1">Selamat datang di Sistem Manajemen Perpustakaan</p>
         </div>
         <div className="text-sm text-gray-500" key="last-update">
-          Pembaruan terakhir: {new Date().toLocaleString('id-ID')}
+          Pembaruan terakhir: {globalDate.toLocaleString('id-ID')}
         </div>
       </div>
 
@@ -83,7 +94,7 @@ const Dashboard: React.FC = () => {
         <StatCard
           key="active-loans"
           title="Peminjaman Aktif"
-          value={peminjaman.filter(p => p.status_peminjaman === 'dipinjam').length}
+          value={peminjaman.filter(p => !p.tanggal_kembali_aktual).length}
           icon={BookOpen}
           color="bg-orange-500"
           change={growth.peminjamanGrowth}
@@ -91,7 +102,12 @@ const Dashboard: React.FC = () => {
         <StatCard
           key="total-fines"
           title="Total Denda"
-          value={`Rp ${stats.totalDenda.toLocaleString('id-ID')}`}
+          value={`Rp ${peminjaman.reduce((sum, loan) => {
+            if (new Date(loan.tanggal_kembali_rencana) < globalDate && !loan.tanggal_kembali_aktual) {
+              return sum + getLateDays(loan, globalDate) * 1000;
+            }
+            return sum + (loan.denda || 0);
+          }, 0).toLocaleString('id-ID')}`}
           icon={DollarSign}
           color="bg-red-500"
         />
@@ -166,29 +182,6 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6" key="quick-actions">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4" key="quick-actions-title">Aksi Cepat</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" key="quick-actions-grid">
-          <button key="add-book" className="p-4 bg-blue-50 rounded-lg text-blue-700 hover:bg-blue-100 transition-colors">
-            <Book className="w-6 h-6 mx-auto mb-2" />
-            <span className="text-sm font-medium">Tambah Buku</span>
-          </button>
-          <button key="add-member" className="p-4 bg-green-50 rounded-lg text-green-700 hover:bg-green-100 transition-colors">
-            <Users className="w-6 h-6 mx-auto mb-2" />
-            <span className="text-sm font-medium">Daftar Anggota</span>
-          </button>
-          <button key="borrow-book" className="p-4 bg-orange-50 rounded-lg text-orange-700 hover:bg-orange-100 transition-colors">
-            <BookOpen className="w-6 h-6 mx-auto mb-2" />
-            <span className="text-sm font-medium">Pinjam Buku</span>
-          </button>
-          <button key="return-book" className="p-4 bg-purple-50 rounded-lg text-purple-700 hover:bg-purple-100 transition-colors">
-            <BookOpen className="w-6 h-6 mx-auto mb-2" />
-            <span className="text-sm font-medium">Kembalikan Buku</span>
-          </button>
         </div>
       </div>
     </div>

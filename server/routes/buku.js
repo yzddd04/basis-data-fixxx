@@ -44,4 +44,11 @@ router.delete('/:id', async (req, res) => {
   res.json({ message: 'Buku dihapus' });
 });
 
+// DELETE permanent buku
+router.delete('/permanent/:id', async (req, res) => {
+  const buku = await Buku.findByIdAndDelete(req.params.id);
+  if (!buku) return res.status(404).json({ message: 'Buku tidak ditemukan' });
+  res.json({ message: 'Buku dihapus permanen' });
+});
+
 module.exports = router; 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useGlobalDate } from '../../context/LibraryContext';
 
 interface HeaderProps {
@@ -18,19 +18,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           >
             <Menu className="h-6 w-6" />
           </button>
-
-          <div className="ml-4 flex-1 max-w-lg lg:max-w-xs">
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="search"
-                placeholder="Cari buku, anggota, atau transaksi..."
-                className="block w-full rounded-lg border-gray-300 pl-10 pr-3 py-2 text-sm placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="text-sm text-gray-700 flex flex-col items-end">

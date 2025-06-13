@@ -44,4 +44,11 @@ router.delete('/:id', async (req, res) => {
   res.json({ message: 'Petugas dihapus' });
 });
 
+// DELETE permanent petugas
+router.delete('/permanent/:id', async (req, res) => {
+  const petugas = await Petugas.findByIdAndDelete(req.params.id);
+  if (!petugas) return res.status(404).json({ message: 'Petugas tidak ditemukan' });
+  res.json({ message: 'Petugas dihapus permanen' });
+});
+
 module.exports = router; 
