@@ -302,16 +302,18 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       alert('ID petugas tidak valid!');
       return;
     }
+    // Cari data petugas sebelum dihapus
+    const petugasToDelete = petugas.find(p => p.id_petugas === id);
+    if (!petugasToDelete) {
+      alert('ID petugas tidak valid!');
+      return;
+    }
     try {
-      // Cari data petugas sebelum dihapus
-      const petugasToDelete = petugas.find(p => p.id_petugas === id);
       await axios.delete(`http://localhost:5050/api/petugas/${id}`);
       const res = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
       setPetugas(res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
       // Masukkan ke sampah jika data ditemukan
-      if (petugasToDelete) {
-        moveToTrash('petugas', id, petugasToDelete, deletedBy);
-      }
+      moveToTrash('petugas', id, petugasToDelete, deletedBy);
     } catch (err) {
       alert('Gagal hapus petugas: ' + (err as Error).message);
     }

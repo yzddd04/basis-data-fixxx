@@ -53,6 +53,7 @@ Aplikasi ini merupakan sistem manajemen perpustakaan berbasis web yang dikembang
    npm start
    ```
 4. **Jalankan frontend**
+buka terminal baru dan jalankan command berikut:
    ```bash
    cd ../
    npm run dev
@@ -87,8 +88,6 @@ Aplikasi ini merupakan sistem manajemen perpustakaan berbasis web yang dikembang
 ![image](https://github.com/user-attachments/assets/385a748f-cdcc-4e14-bbd2-d146c0d513fc)
 ## 7. Delete data, otomatis masuk ke table “trash”
 ![image](https://github.com/user-attachments/assets/83960d6f-407d-4092-bca4-c647195e4a52)
-
-
 
 ---
 
