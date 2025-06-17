@@ -55,7 +55,6 @@ Aplikasi ini merupakan sistem manajemen perpustakaan berbasis web yang dikembang
 4. **Frontend -> buka terminal baru dan jalankan command berikut:**
 
    ```bash
-   cd ../
    npm run dev
    # atau
    yarn dev
