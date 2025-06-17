@@ -16,7 +16,6 @@ export const useLibrary = () => {
   return context;
 };
 
-let nextMemberNumber = 5;
 let nextSampahId = 1;
 
 type BukuFromBackend = Omit<Buku, 'id_buku'> & { _id: string };
@@ -113,10 +112,10 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const petugasAll = await axios.get<PetugasFromBackend[]>(`http://localhost:5050/api/petugas/all`);
         // Peminjaman
         const peminjamanAll = await axios.get<PeminjamanFromBackend[]>(`http://localhost:5050/api/peminjaman/all`);
-        let trash: Sampah[] = [];
+        const trash: Sampah[] = [];
         bukuAll.data.filter(b => b.is_deleted).forEach(b => {
           trash.push({
-            id_sampah: `${b._id}-buku`,
+            id_sampah: nextSampahId++,
             nama_tabel: 'buku',
             id_data_asli: b._id,
             data_backup: JSON.stringify(b),
@@ -127,7 +126,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         anggotaAll.data.filter(a => a.is_deleted).forEach(a => {
           trash.push({
-            id_sampah: `${a._id}-anggota`,
+            id_sampah: nextSampahId++,
             nama_tabel: 'anggota',
             id_data_asli: a._id,
             data_backup: JSON.stringify(a),
@@ -138,7 +137,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         petugasAll.data.filter(p => p.is_deleted).forEach(p => {
           trash.push({
-            id_sampah: `${p._id}-petugas`,
+            id_sampah: nextSampahId++,
             nama_tabel: 'petugas',
             id_data_asli: p._id,
             data_backup: JSON.stringify(p),
@@ -149,7 +148,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
         peminjamanAll.data.filter(pm => pm.is_deleted).forEach(pm => {
           trash.push({
-            id_sampah: `${pm._id}-peminjaman`,
+            id_sampah: nextSampahId++,
             nama_tabel: 'peminjaman',
             id_data_asli: pm._id,
             data_backup: JSON.stringify(pm),
@@ -166,13 +165,7 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchTrash();
   }, []);
 
-  const generateNomorAnggota = (): string => {
-    const number = nextMemberNumber.toString().padStart(3, '0');
-    nextMemberNumber++;
-    return `AGT${number}`;
-  };
-
-  const moveToTrash = (tableName: string, dataId: string, data: any, deletedBy: string) => {
+  const moveToTrash = (tableName: string, dataId: string, data: unknown, deletedBy: string) => {
     const trashItem: Sampah = {
       id_sampah: nextSampahId++,
       nama_tabel: tableName,
@@ -405,22 +398,22 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const restoreFromTrash = async (id_sampah: string | number) => {
     const trashItem = sampah.find(s => s.id_sampah === id_sampah);
     if (!trashItem) return;
-    const data = JSON.parse(trashItem.data_backup);
+    let bukuRes, anggotaRes, petugasRes;
     try {
       switch (trashItem.nama_tabel) {
         case 'buku':
           await axios.put(`http://localhost:5050/api/buku/${trashItem.id_data_asli}`, { is_deleted: false });
-          const bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
+          bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
           setBuku(bukuRes.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
           break;
         case 'anggota':
           await axios.put(`http://localhost:5050/api/anggota/${trashItem.id_data_asli}`, { is_deleted: false });
-          const anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
+          anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
           setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
           break;
         case 'petugas':
           await axios.put(`http://localhost:5050/api/petugas/${trashItem.id_data_asli}`, { is_deleted: false });
-          const petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
+          petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
           setPetugas(petugasRes.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
           break;
       }
@@ -433,29 +426,27 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const permanentDelete = async (id_sampah: number) => {
     const trashItem = sampah.find(s => s.id_sampah === id_sampah);
     if (!trashItem) return;
-    const data = JSON.parse(trashItem.data_backup);
-    let bukuRes, anggotaRes, petugasRes, peminjamanRes;
+    let bukuRes, anggotaRes, petugasRes;
     try {
       switch (trashItem.nama_tabel) {
         case 'buku':
-          await axios.delete(`http://localhost:5050/api/buku/permanent/${data.id_buku}`);
+          await axios.delete(`http://localhost:5050/api/buku/permanent/${trashItem.id_data_asli}`);
           bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
           setBuku(bukuRes.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
           break;
         case 'anggota':
-          await axios.delete(`http://localhost:5050/api/anggota/permanent/${data.id_anggota}`);
+          await axios.delete(`http://localhost:5050/api/anggota/permanent/${trashItem.id_data_asli}`);
           anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
           setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
           break;
         case 'petugas':
-          await axios.delete(`http://localhost:5050/api/petugas/permanent/${data.id_petugas}`);
+          await axios.delete(`http://localhost:5050/api/petugas/permanent/${trashItem.id_data_asli}`);
           petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
           setPetugas(petugasRes.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
           break;
         case 'peminjaman':
-          await axios.delete(`http://localhost:5050/api/peminjaman/permanent/${data.id_peminjaman}`);
-          peminjamanRes = await axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman');
-          setPeminjaman(peminjamanRes.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
+          await axios.delete(`http://localhost:5050/api/peminjaman/permanent/${trashItem.id_data_asli}`);
+          setPeminjaman(peminjaman.filter(p => p.id_peminjaman !== trashItem.id_data_asli));
           break;
       }
       setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));
@@ -543,10 +534,6 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     petugas: petugas.filter(p => !p.is_deleted),
     peminjaman,
     sampah,
-    bukuAll: buku,
-    anggotaAll: anggota,
-    petugasAll: petugas,
-    peminjamanAll: peminjaman,
     addBuku,
     updateBuku,
     deleteBuku,
@@ -571,7 +558,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     permanentDelete,
     getStats,
     getStatsWithGrowth,
-    getPeminjamanFromBackend
+    getPeminjamanFromBackend,
+    globalDate
   };
 
   return (
