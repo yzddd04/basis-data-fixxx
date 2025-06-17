@@ -2,6 +2,12 @@ const express = require('express');
 const Peminjaman = require('../models/Peminjaman');
 const router = express.Router();
 
+// GET semua peminjaman (termasuk yang soft delete)
+router.get('/all', async (req, res) => {
+  const peminjaman = await Peminjaman.find();
+  res.json(peminjaman);
+});
+
 // GET semua peminjaman
 router.get('/', async (req, res) => {
   const peminjaman = await Peminjaman.find({ is_deleted: false });

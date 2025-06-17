@@ -29,8 +29,9 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
   });
 
   const filteredMembers = anggota.filter(member =>
-    (member.nama_lengkap?.toLowerCase() || '').includes(memberSearch.toLowerCase()) ||
-    (member.nomor_anggota?.toLowerCase() || '').includes(memberSearch.toLowerCase())
+    member.status_aktif === 'aktif' &&
+    ((member.nama_lengkap?.toLowerCase() || '').includes(memberSearch.toLowerCase()) ||
+    (member.nomor_anggota?.toLowerCase() || '').includes(memberSearch.toLowerCase()))
   );
 
   const filteredBooks = buku.filter(book =>
@@ -125,8 +126,14 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Pinjam Buku</h2>
           <button
@@ -168,25 +175,23 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
             
             {showMemberList && filteredMembers.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                {filteredMembers.map((member) => {
-                  return (
-                    <div
-                      key={member.id_anggota}
-                      onClick={() => selectMember(member)}
-                      className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 text-gray-400 mr-2" />
-                        <div>
-                          <div className="font-medium text-gray-900">{member.nama_lengkap}</div>
-                          <div className="text-sm text-gray-500">
-                            {member.nomor_anggota}
-                          </div>
+                {filteredMembers.map((member, idx) => (
+                  <div
+                    key={member.id_anggota || idx}
+                    onClick={() => selectMember(member)}
+                    className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex items-center">
+                      <User className="w-4 h-4 text-gray-400 mr-2" />
+                      <div>
+                        <div className="font-medium text-gray-900">{member.nama_lengkap}</div>
+                        <div className="text-sm text-gray-500">
+                          {member.nomor_anggota}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -221,9 +226,9 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
             
             {showBookList && filteredBooks.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                {filteredBooks.map((book) => (
+                {filteredBooks.map((book, idx) => (
                   <div
-                    key={book.id_buku}
+                    key={book.id_buku || idx}
                     onClick={() => selectBook(book)}
                     className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                   >
@@ -256,8 +261,8 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
                 }`}
               >
                 <option value="">Pilih petugas</option>
-                {petugas.map((staff) => (
-                  <option key={staff.id_petugas} value={staff.id_petugas}>
+                {petugas.map((staff, idx) => (
+                  <option key={staff.id_petugas || idx} value={staff.id_petugas}>
                     {staff.nama_petugas} - {staff.jabatan}
                   </option>
                 ))}

@@ -2,6 +2,12 @@ const express = require('express');
 const Petugas = require('../models/Petugas');
 const router = express.Router();
 
+// GET semua petugas (termasuk yang soft delete)
+router.get('/all', async (req, res) => {
+  const petugas = await Petugas.find();
+  res.json(petugas);
+});
+
 // GET semua petugas
 router.get('/', async (req, res) => {
   const petugas = await Petugas.find({ is_deleted: false });

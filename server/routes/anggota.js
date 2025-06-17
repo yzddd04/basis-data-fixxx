@@ -2,6 +2,12 @@ const express = require('express');
 const Anggota = require('../models/Anggota');
 const router = express.Router();
 
+// GET semua anggota (termasuk yang soft delete)
+router.get('/all', async (req, res) => {
+  const anggota = await Anggota.find();
+  res.json(anggota);
+});
+
 // GET semua anggota
 router.get('/', async (req, res) => {
   const anggota = await Anggota.find({ is_deleted: false });
@@ -12,12 +18,6 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const anggota = await Anggota.findById(req.params.id);
   if (!anggota || anggota.is_deleted) return res.status(404).json({ message: 'Anggota tidak ditemukan' });
-  res.json(anggota);
-});
-
-// GET semua anggota (termasuk yang soft delete)
-router.get('/all', async (req, res) => {
-  const anggota = await Anggota.find();
   res.json(anggota);
 });
 

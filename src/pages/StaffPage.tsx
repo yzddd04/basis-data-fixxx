@@ -99,6 +99,12 @@ const StaffPage: React.FC = () => {
                     <MapPin className="w-4 h-4 mr-1" />
                     <span className="line-clamp-2">{staff.alamat}</span>
                   </div>
+                  <div className="mb-2 text-xs text-gray-500">
+                    Dibuat : {new Date(staff.created_at).toLocaleDateString('id-ID')}
+                  </div>
+                  <div className="mb-4 text-xs text-gray-500">
+                    Diupdate : {new Date(staff.updated_at).toLocaleDateString('id-ID')}
+                  </div>
                 </div>
                 <div className="flex-shrink-0">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">

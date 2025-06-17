@@ -153,6 +153,13 @@ const BooksPage: React.FC = () => {
                 ISBN: {book.isbn}
               </div>
 
+              <div className="mb-2 text-xs text-gray-500">
+                Dibuat : {new Date(book.created_at).toLocaleDateString('id-ID')}
+              </div>
+              <div className="mb-4 text-xs text-gray-500">
+                Diupdate : {new Date(book.updated_at).toLocaleDateString('id-ID')}
+              </div>
+
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleEdit(book)}

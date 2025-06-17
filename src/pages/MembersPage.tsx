@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLibrary } from '../context/LibraryContext';
-import { Plus, Search, Edit, Trash2, Users, Mail, Phone, Calendar } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Users, Mail, Phone, Calendar, MapPin } from 'lucide-react';
 import MemberForm from '../components/members/MemberForm';
 import { Anggota } from '../types';
 
@@ -104,24 +104,28 @@ const MembersPage: React.FC = () => {
 
       {/* Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" key="members-grid">
-        {filteredMembers.map((member) => (
-          <div key={member.id_anggota} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+        {filteredMembers.map((member: Anggota, idx: number) => (
+          <div key={member.id_anggota || idx} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.nama_lengkap}</h3>
                   <p className="text-blue-600 text-sm font-medium mb-2">{member.nomor_anggota}</p>
-                  <div className="flex items-center text-sm text-gray-500 mb-1" key={`email-${member.id_anggota}`}>
+                  <div className="flex items-center text-sm text-gray-500 mb-1"> 
                     <Mail className="w-4 h-4 mr-1" />
                     {member.email}
                   </div>
-                  <div className="flex items-center text-sm text-gray-500 mb-1" key={`phone-${member.id_anggota}`}>
+                  <div className="flex items-center text-sm text-gray-500 mb-1"> 
                     <Phone className="w-4 h-4 mr-1" />
                     {member.telepon}
                   </div>
-                  <div className="flex items-center text-sm text-gray-500" key={`join-${member.id_anggota}`}>
+                  <div className="flex items-center text-sm text-gray-500 mb-1"> 
                     <Calendar className="w-4 h-4 mr-1" />
                     Bergabung: {new Date(member.tanggal_daftar).toLocaleDateString('id-ID')}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500 mb-1"> 
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {member.alamat}
                   </div>
                 </div>
                 <div className="flex flex-col items-end">
@@ -129,19 +133,21 @@ const MembersPage: React.FC = () => {
                     member.status_aktif === 'aktif'
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
-                  }`} key={`status-${member.id_anggota}`}>
+                  }`}>
                     {member.status_aktif === 'aktif' ? 'Aktif' : 'Non-Aktif'}
                   </span>
                 </div>
               </div>
               
-              <div className="mb-4">
-                <p className="text-sm text-gray-600 line-clamp-2">{member.alamat}</p>
+              <div className="mb-2 text-xs text-gray-500">
+                Dibuat : {new Date(member.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+              </div>
+              <div className="mb-4 text-xs text-gray-500">
+                Diupdate : {new Date(member.updated_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </div>
 
               <div className="flex space-x-2">
                 <button
-                  key={`edit-${member.id_anggota}`}
                   onClick={() => handleEdit(member)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                 >
@@ -149,7 +155,6 @@ const MembersPage: React.FC = () => {
                   Edit
                 </button>
                 <button
-                  key={`delete-${member.id_anggota}`}
                   onClick={() => handleDeleteMember(member.id_anggota)}
                   className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                 >

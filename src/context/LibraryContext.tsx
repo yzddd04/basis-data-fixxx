@@ -101,6 +101,71 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       .catch(() => setPeminjaman([]));
   }, []);
 
+  useEffect(() => {
+    // Ambil semua data yang is_deleted true dari backend untuk trash
+    const fetchTrash = async () => {
+      try {
+        // Buku
+        const bukuAll = await axios.get<BukuFromBackend[]>(`http://localhost:5050/api/buku/all`);
+        // Anggota
+        const anggotaAll = await axios.get<AnggotaFromBackend[]>(`http://localhost:5050/api/anggota/all`);
+        // Petugas
+        const petugasAll = await axios.get<PetugasFromBackend[]>(`http://localhost:5050/api/petugas/all`);
+        // Peminjaman
+        const peminjamanAll = await axios.get<PeminjamanFromBackend[]>(`http://localhost:5050/api/peminjaman/all`);
+        let trash: Sampah[] = [];
+        bukuAll.data.filter(b => b.is_deleted).forEach(b => {
+          trash.push({
+            id_sampah: `${b._id}-buku`,
+            nama_tabel: 'buku',
+            id_data_asli: b._id,
+            data_backup: JSON.stringify(b),
+            dihapus_oleh: b.updated_at || '-',
+            tanggal_dihapus: b.updated_at || b.created_at,
+            created_at: b.created_at
+          });
+        });
+        anggotaAll.data.filter(a => a.is_deleted).forEach(a => {
+          trash.push({
+            id_sampah: `${a._id}-anggota`,
+            nama_tabel: 'anggota',
+            id_data_asli: a._id,
+            data_backup: JSON.stringify(a),
+            dihapus_oleh: a.updated_at || '-',
+            tanggal_dihapus: a.updated_at || a.created_at,
+            created_at: a.created_at
+          });
+        });
+        petugasAll.data.filter(p => p.is_deleted).forEach(p => {
+          trash.push({
+            id_sampah: `${p._id}-petugas`,
+            nama_tabel: 'petugas',
+            id_data_asli: p._id,
+            data_backup: JSON.stringify(p),
+            dihapus_oleh: p.updated_at || '-',
+            tanggal_dihapus: p.updated_at || p.created_at,
+            created_at: p.created_at
+          });
+        });
+        peminjamanAll.data.filter(pm => pm.is_deleted).forEach(pm => {
+          trash.push({
+            id_sampah: `${pm._id}-peminjaman`,
+            nama_tabel: 'peminjaman',
+            id_data_asli: pm._id,
+            data_backup: JSON.stringify(pm),
+            dihapus_oleh: pm.updated_at || '-',
+            tanggal_dihapus: pm.updated_at || pm.created_at,
+            created_at: pm.created_at
+          });
+        });
+        setSampah(trash);
+      } catch (err) {
+        // Jika endpoint /all tidak ada, abaikan
+      }
+    };
+    fetchTrash();
+  }, []);
+
   const generateNomorAnggota = (): string => {
     const number = nextMemberNumber.toString().padStart(3, '0');
     nextMemberNumber++;
@@ -199,8 +264,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // Cari data anggota sebelum dihapus
       const anggotaToDelete = anggota.find(a => a.id_anggota === id);
       await axios.delete(`http://localhost:5050/api/anggota/${id}`);
-      const res = await axios.get<Anggota[]>('http://localhost:5050/api/anggota');
-      setAnggota(res.data);
+      const anggotaRes = await axios.get<AnggotaFromBackend[]>(`http://localhost:5050/api/anggota`);
+      setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
       // Masukkan ke sampah jika data ditemukan
       if (anggotaToDelete) {
         moveToTrash('anggota', id, anggotaToDelete, deletedBy);
@@ -269,14 +334,16 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Peminjaman operations
   const addPeminjaman = async (newPeminjaman: Omit<Peminjaman, 'id_peminjaman' | 'created_at' | 'updated_at'>) => {
+    const member = anggota.find(a => a.id_anggota === newPeminjaman.id_anggota);
+    if (!member || member.status_aktif !== 'aktif') {
+      alert('Anggota tidak aktif tidak bisa meminjam buku!');
+      return;
+    }
     try {
       await axios.post('http://localhost:5050/api/peminjaman', newPeminjaman);
-      // Fetch ulang data peminjaman
+      // Fetch ulang data peminjaman dari backend agar sinkron
       const res = await axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman');
       setPeminjaman(res.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
-      // Fetch ulang data buku agar stok update
-      const resBuku = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
-      setBuku(resBuku.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
     } catch (err) {
       alert('Gagal menambah peminjaman: ' + (err as Error).message);
     }
@@ -335,29 +402,29 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
 
   // Trash operations
-  const restoreFromTrash = async (id_sampah: number) => {
+  const restoreFromTrash = async (id_sampah: string | number) => {
     const trashItem = sampah.find(s => s.id_sampah === id_sampah);
     if (!trashItem) return;
     const data = JSON.parse(trashItem.data_backup);
     try {
-    switch (trashItem.nama_tabel) {
-      case 'buku':
-          await axios.put(`http://localhost:5050/api/buku/${data.id_buku}`, { is_deleted: false });
+      switch (trashItem.nama_tabel) {
+        case 'buku':
+          await axios.put(`http://localhost:5050/api/buku/${trashItem.id_data_asli}`, { is_deleted: false });
           const bukuRes = await axios.get<BukuFromBackend[]>('http://localhost:5050/api/buku');
           setBuku(bukuRes.data.map((b: BukuFromBackend) => ({ ...b, id_buku: b._id })));
-        break;
-      case 'anggota':
-          await axios.put(`http://localhost:5050/api/anggota/${data.id_anggota}`, { is_deleted: false });
+          break;
+        case 'anggota':
+          await axios.put(`http://localhost:5050/api/anggota/${trashItem.id_data_asli}`, { is_deleted: false });
           const anggotaRes = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
           setAnggota(anggotaRes.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
-        break;
-      case 'petugas':
-          await axios.put(`http://localhost:5050/api/petugas/${data.id_petugas}`, { is_deleted: false });
+          break;
+        case 'petugas':
+          await axios.put(`http://localhost:5050/api/petugas/${trashItem.id_data_asli}`, { is_deleted: false });
           const petugasRes = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
           setPetugas(petugasRes.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
-        break;
-    }
-    setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));
+          break;
+      }
+      setSampah(prev => prev.filter(s => s.id_sampah !== id_sampah));
     } catch (err) {
       alert('Gagal memulihkan data: ' + (err as Error).message);
     }
@@ -464,6 +531,12 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   };
 
+  const getPeminjamanFromBackend = () => {
+    axios.get<PeminjamanFromBackend[]>('http://localhost:5050/api/peminjaman').then(res => {
+      setPeminjaman(res.data.map((p: PeminjamanFromBackend) => ({ ...p, id_peminjaman: p._id })));
+    });
+  };
+
   const value: LibraryContextType = {
     buku: buku.filter(b => !b.is_deleted),
     anggota: anggota.filter(a => !a.is_deleted),
@@ -497,7 +570,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     restoreFromTrash,
     permanentDelete,
     getStats,
-    getStatsWithGrowth
+    getStatsWithGrowth,
+    getPeminjamanFromBackend
   };
 
   return (

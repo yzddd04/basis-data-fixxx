@@ -5,7 +5,7 @@ import ReturnForm from '../components/returns/ReturnForm';
 import { Peminjaman } from '../types';
 
 const ReturnsPage: React.FC = () => {
-  const { peminjaman, buku, anggota } = useLibrary();
+  const { peminjaman, buku, anggota, getPeminjamanFromBackend } = useLibrary();
   const { globalDate } = useGlobalDate();
   const globalDateString = (globalDate ? globalDate : new Date()).toISOString().split('T')[0];
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +30,8 @@ const ReturnsPage: React.FC = () => {
     setShowReturnForm(true);
   };
 
-  const handleReturnSuccess = () => {
+  const handleReturnSuccess = async () => {
+    await getPeminjamanFromBackend();
     setShowReturnForm(false);
     setSelectedLoan(null);
   };
@@ -148,14 +149,14 @@ const ReturnsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLoans.map((loan) => {
+              {filteredLoans.map((loan, idx) => {
                 const member = anggota.find(a => a.id_anggota === loan.id_anggota);
                 const book = buku.find(b => b.id_buku === loan.id_buku);
                 const overdue = new Date(loan.tanggal_kembali_rencana) < globalDate && !loan.tanggal_kembali_aktual;
                 const currentFine = calculateFine(loan.tanggal_kembali_rencana);
                 
                 return (
-                  <tr key={loan.id_peminjaman} className="hover:bg-gray-50">
+                  <tr key={loan.id_peminjaman || idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -212,7 +213,7 @@ const ReturnsPage: React.FC = () => {
       </div>
 
       {/* Return Form Modal */}
-      {showReturnForm && selectedLoan && (
+      {showReturnForm && selectedLoan && selectedLoan.id_peminjaman ? (
         <ReturnForm
           loan={selectedLoan}
           onSuccess={handleReturnSuccess}
@@ -221,7 +222,7 @@ const ReturnsPage: React.FC = () => {
             setSelectedLoan(null);
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 };

@@ -182,14 +182,14 @@ const BorrowingPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLoans.map((loan) => {
+              {filteredLoans.map((loan, idx) => {
                 const member = anggota.find(a => a.id_anggota === loan.id_anggota);
                 const book = buku.find(b => b.id_buku === loan.id_buku);
                 const daysRemaining = getDaysRemaining(loan.tanggal_kembali_rencana);
                 const overdue = isLoanLate(loan, globalDate);
                 
                 return (
-                  <tr key={loan.id_peminjaman} className="hover:bg-gray-50">
+                  <tr key={loan.id_peminjaman || idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">

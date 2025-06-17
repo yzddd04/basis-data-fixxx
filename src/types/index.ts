@@ -151,4 +151,6 @@ export interface LibraryContextType {
     anggotaGrowth: number;
     peminjamanGrowth: number;
   };
+
+  getPeminjamanFromBackend: () => void;
 }

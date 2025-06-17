@@ -8,6 +8,12 @@ router.get('/', async (req, res) => {
   res.json(buku);
 });
 
+// GET semua buku (termasuk yang soft delete)
+router.get('/all', async (req, res) => {
+  const buku = await Buku.find();
+  res.json(buku);
+});
+
 // GET buku by id
 router.get('/:id', async (req, res) => {
   const buku = await Buku.findById(req.params.id);
