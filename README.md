@@ -46,14 +46,14 @@ Aplikasi ini merupakan sistem manajemen perpustakaan berbasis web yang dikembang
    # atau
    yarn install
    ```
-3. **Jalankan backend**
+3. **Backend -> jalankan command berikut:**
    ```bash
    cd server
    npm install
    npm start
    ```
-4. **Jalankan frontend**
-buka terminal baru dan jalankan command berikut:
+4. **Frontend -> buka terminal baru dan jalankan command berikut:**
+
    ```bash
    cd ../
    npm run dev
