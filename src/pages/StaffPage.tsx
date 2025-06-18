@@ -1,155 +1,124 @@
 import React, { useState } from 'react';
 import { useLibrary } from '../context/LibraryContext';
-import { Plus, Search, Edit, Trash2, UserCheck, Phone, MapPin } from 'lucide-react';
-import StaffForm from '../components/staff/StaffForm';
 import { Petugas } from '../types';
+import { Plus, Edit, Trash2, Phone, MapPin, Briefcase } from 'lucide-react';
+import PetugasForm from '../components/staff/PetugasForm';
 
 const StaffPage: React.FC = () => {
   const { petugas, addPetugas, updatePetugas, deletePetugas } = useLibrary();
   const [showForm, setShowForm] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<Petugas | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [editingPetugas, setEditingPetugas] = useState<Petugas | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredStaff = petugas.filter(staff =>
-    staff.nama_petugas.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    staff.jabatan.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPetugas = petugas?.filter(p => 
+    p?.nama_petugas?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
 
-  const handleAddStaff = (staffData: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
-    addPetugas(staffData);
-    setShowForm(false);
-  };
-
-  const handleUpdateStaff = (staffData: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
-    if (editingStaff && editingStaff.id_petugas) {
-      updatePetugas(editingStaff.id_petugas, staffData);
-      setEditingStaff(null);
+  const handleAddPetugas = async (petugasData: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
+    try {
+      await addPetugas(petugasData);
       setShowForm(false);
-    } else {
-      alert('ID petugas tidak valid!');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to add petugas');
     }
   };
 
-  const handleDeleteStaff = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus petugas ini?')) {
-      deletePetugas(id, 'Admin');
+  const handleUpdatePetugas = async (petugasData: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
+    if (!editingPetugas?.id_petugas) return;
+    try {
+      await updatePetugas(editingPetugas.id_petugas, petugasData);
+      setShowForm(false);
+      setEditingPetugas(undefined);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update petugas');
     }
   };
 
-  const handleEdit = (staff: Petugas) => {
-    setEditingStaff(staff);
-    setShowForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setEditingStaff(null);
+  const handleDeletePetugas = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus petugas ini?')) return;
+    try {
+      await deletePetugas(id);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to delete petugas');
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manajemen Petugas</h1>
-          <p className="text-gray-600 mt-1">Kelola data petugas perpustakaan</p>
-        </div>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Manajemen Petugas</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-5 h-5" />
           Tambah Petugas
         </button>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Cari nama petugas atau jabatan..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div className="text-sm text-gray-600 flex items-center">
-            Menampilkan {filteredStaff.length} dari {petugas.length} petugas
-          </div>
-        </div>
+      <div className="mb-6">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cari petugas..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
       </div>
 
-      {/* Staff Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStaff.map((staff) => (
-          <div key={staff.id_petugas} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">{staff.nama_petugas}</h3>
-                  <p className="text-blue-600 text-sm font-medium mb-3">{staff.jabatan}</p>
-                  <div className="flex items-center text-sm text-gray-500 mb-2" key={`phone-${staff.id_petugas}`}>
-                    <Phone className="w-4 h-4 mr-1" />
-                    {staff.telepon}
-                  </div>
-                  <div className="flex items-center text-sm text-gray-500" key={`alamat-${staff.id_petugas}`}>
-                    <MapPin className="w-4 h-4 mr-1" />
-                    <span className="line-clamp-2">{staff.alamat}</span>
-                  </div>
-                  <div className="mb-2 text-xs text-gray-500">
-                    Dibuat : {new Date(staff.created_at).toLocaleDateString('id-ID')}
-                  </div>
-                  <div className="mb-4 text-xs text-gray-500">
-                    Diupdate : {new Date(staff.updated_at).toLocaleDateString('id-ID')}
-                  </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <button
-                  key={`edit-${staff.id_petugas}`}
-                  onClick={() => handleEdit(staff)}
-                  className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Edit className="w-4 h-4 mr-1" />
-                  Edit
-                </button>
-                <button
-                  key={`delete-${staff.id_petugas}`}
-                  onClick={() => handleDeleteStaff(staff.id_petugas)}
-                  className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Hapus
-                </button>
-              </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredPetugas.map((p, idx) => (
+          <div key={p.id_petugas || `petugas-${idx}`}
+            className="bg-white rounded-xl shadow p-6 flex flex-col justify-between border border-gray-100"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold text-gray-900">{p.nama_petugas}</h2>
+            </div>
+            <div className="text-sm text-gray-700 space-y-1 mb-2">
+              <div className="flex items-center"><Briefcase className="w-4 h-4 mr-2 text-gray-400" />{p.jabatan}</div>
+              <div className="flex items-center"><Phone className="w-4 h-4 mr-2 text-gray-400" />{p.telepon}</div>
+              <div className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-gray-400" />{p.alamat}</div>
+            </div>
+            <div className="text-xs text-gray-500 mb-2">
+              <div>Dibuat : {p.created_at ? new Date(p.created_at).toLocaleString('id-ID') : '-'}</div>
+              <div>Diupdate : {p.updated_at ? new Date(p.updated_at).toLocaleString('id-ID') : '-'}</div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => {
+                  setEditingPetugas(p);
+                  setShowForm(true);
+                }}
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 border border-blue-100"
+              >
+                <Edit className="w-4 h-4" /> Edit
+              </button>
+              <button
+                onClick={() => handleDeletePetugas(p.id_petugas)}
+                className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 border border-red-100"
+              >
+                <Trash2 className="w-4 h-4" /> Hapus
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      {filteredStaff.length === 0 && (
+      {filteredPetugas.length === 0 && (
         <div className="text-center py-12">
-          <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada petugas ditemukan</h3>
-          <p className="text-gray-600">Coba ubah kata kunci pencarian</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada petugas</h3>
+          <p className="text-gray-600">Belum ada data petugas yang tersedia</p>
         </div>
       )}
 
-      {/* Staff Form Modal */}
       {showForm && (
-        <StaffForm
-          staff={editingStaff}
-          onSubmit={editingStaff ? handleUpdateStaff : handleAddStaff}
-          onClose={handleCloseForm}
+        <PetugasForm
+          onSuccess={editingPetugas ? handleUpdatePetugas : handleAddPetugas}
+          onClose={() => {
+            setShowForm(false);
+            setEditingPetugas(undefined);
+          }}
+          editingPetugas={editingPetugas}
         />
       )}
     </div>

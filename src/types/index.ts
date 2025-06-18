@@ -31,7 +31,7 @@ export interface Anggota {
 export interface Petugas {
   id_petugas: string;
   nama_petugas: string;
-  jabatan: string;
+  jabatan: 'asisten pustakawan' | 'pustakawan' | 'petugas administrasi';
   telepon: string;
   alamat: string;
   is_deleted: boolean;
@@ -49,7 +49,6 @@ export interface Peminjaman {
   tanggal_kembali_aktual?: string;
   status_peminjaman: 'dipinjam' | 'dikembalikan' | 'terlambat';
   denda: number;
-  catatan?: string;
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
@@ -114,9 +113,9 @@ export interface LibraryContextType {
   restoreAnggota: (id: string) => void;
 
   // Petugas operations
-  addPetugas: (petugas: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => void;
-  updatePetugas: (id: string, updates: Partial<Petugas>) => void;
-  deletePetugas: (id: string, deletedBy: string) => void;
+  addPetugas: (petugas: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => Promise<void>;
+  updatePetugas: (id: string, updates: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => Promise<void>;
+  deletePetugas: (id: string) => Promise<void>;
   restorePetugas: (id: string) => void;
 
   // Peminjaman operations

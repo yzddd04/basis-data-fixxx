@@ -39,7 +39,7 @@ router.put('/:id', async (req, res) => {
   res.json(petugas);
 });
 
-// DELETE soft delete petugas
+// DELETE petugas (soft delete)
 router.delete('/:id', async (req, res) => {
   const petugas = await Petugas.findByIdAndUpdate(
     req.params.id,
@@ -47,7 +47,7 @@ router.delete('/:id', async (req, res) => {
     { new: true }
   );
   if (!petugas) return res.status(404).json({ message: 'Petugas tidak ditemukan' });
-  res.json({ message: 'Petugas dihapus' });
+  res.json({ message: 'Petugas berhasil dihapus' });
 });
 
 // DELETE permanent petugas

@@ -14,7 +14,6 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
   const [selectedBook, setSelectedBook] = useState<Buku | null>(null);
   const [selectedStaff, setSelectedStaff] = useState(petugas[0]?.id_petugas || '');
   const [borrowDate, setBorrowDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [memberSearch, setMemberSearch] = useState('');
@@ -90,7 +89,6 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
         tanggal_kembali_rencana: returnDate,
         status_peminjaman: 'dipinjam' as const,
         denda: 0,
-        catatan: notes || undefined,
         is_deleted: false
       };
 
@@ -326,21 +324,7 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
             </div>
           )}
 
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Catatan (Opsional)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Tambahkan catatan jika diperlukan..."
-            />
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end space-x-4">
             <button
               type="button"
               onClick={onClose}
@@ -350,9 +334,9 @@ const BorrowingForm: React.FC<BorrowingFormProps> = ({ onSuccess, onClose }) => 
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Pinjam Buku
+              Simpan
             </button>
           </div>
         </form>

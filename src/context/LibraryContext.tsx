@@ -81,13 +81,18 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   useEffect(() => {
-    // Ambil data petugas dari backend
-    axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas')
-      .then(res => {
+    // Fetch petugas data on component mount
+    const fetchPetugas = async () => {
+      try {
+        const res = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
         const mapped = res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id }));
         setPetugas(mapped);
-      })
-      .catch(() => setPetugas([]));
+      } catch (error) {
+        console.error('Error fetching petugas:', error);
+        setPetugas([]);
+      }
+    };
+    fetchPetugas();
   }, []);
 
   useEffect(() => {
@@ -277,45 +282,42 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   // Petugas operations
-  const addPetugas = async (newPetugas: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
+  const addPetugas = async (data: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
     try {
-      await axios.post('http://localhost:5050/api/petugas', newPetugas);
-      const res = await axios.get<Petugas[]>('http://localhost:5050/api/petugas');
-      setPetugas(res.data);
-    } catch (err) {
-      alert('Gagal menambah petugas: ' + (err as Error).message);
+      const res = await axios.post<Petugas>('http://localhost:5050/api/petugas', data);
+      setPetugas(prev => [...prev, res.data]);
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to add petugas');
     }
   };
 
-  const updatePetugas = async (id: string, updates: Partial<Petugas>) => {
+  const updatePetugas = async (id: string, data: Omit<Petugas, 'id_petugas' | 'created_at' | 'updated_at'>) => {
     try {
-      await axios.put(`http://localhost:5050/api/petugas/${id}`, updates);
-      const res = await axios.get<Petugas[]>('http://localhost:5050/api/petugas');
-      setPetugas(res.data);
-    } catch (err) {
-      alert('Gagal update petugas: ' + (err as Error).message);
-    }
-  };
-
-  const deletePetugas = async (id: string, deletedBy: string) => {
-    if (!id || typeof id !== 'string') {
-      alert('ID petugas tidak valid!');
-      return;
-    }
-    // Cari data petugas sebelum dihapus
-    const petugasToDelete = petugas.find(p => p.id_petugas === id);
-    if (!petugasToDelete) {
-      alert('ID petugas tidak valid!');
-      return;
-    }
-    try {
-      await axios.delete(`http://localhost:5050/api/petugas/${id}`);
+      await axios.put(`http://localhost:5050/api/petugas/${id}`, data);
+      // Fetch ulang data petugas dari backend
       const res = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
-      setPetugas(res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id })));
-      // Masukkan ke sampah jika data ditemukan
-      moveToTrash('petugas', id, petugasToDelete, deletedBy);
+      const mapped = res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id }));
+      setPetugas(mapped);
     } catch (err) {
-      alert('Gagal hapus petugas: ' + (err as Error).message);
+      throw new Error('Gagal update petugas: ' + (err as Error).message);
+    }
+  };
+
+  const deletePetugas = async (id: string) => {
+    try {
+      // Cari data petugas sebelum dihapus
+      const petugasToDelete = petugas.find(p => p.id_petugas === id);
+      await axios.delete(`http://localhost:5050/api/petugas/${id}`);
+      // Fetch ulang data petugas dari backend
+      const res = await axios.get<PetugasFromBackend[]>('http://localhost:5050/api/petugas');
+      const mapped = res.data.map((p: PetugasFromBackend) => ({ ...p, id_petugas: p._id }));
+      setPetugas(mapped);
+      // Masukkan ke sampah jika data ditemukan
+      if (petugasToDelete) {
+        moveToTrash('petugas', id, petugasToDelete, new Date().toISOString());
+      }
+    } catch (err) {
+      throw new Error('Gagal hapus petugas: ' + (err as Error).message);
     }
   };
 
