@@ -236,8 +236,8 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addAnggota = async (newAnggota: Omit<Anggota, 'id_anggota' | 'nomor_anggota' | 'created_at' | 'updated_at'>) => {
     try {
       await axios.post('http://localhost:5050/api/anggota', newAnggota);
-      const res = await axios.get<Anggota[]>('http://localhost:5050/api/anggota');
-      setAnggota(res.data);
+      const res = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
+      setAnggota(res.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
     } catch (err) {
       alert('Gagal menambah anggota: ' + (err as Error).message);
     }
@@ -246,10 +246,10 @@ export const LibraryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateAnggota = async (id: string, updates: Partial<Anggota>) => {
     try {
       await axios.put(`http://localhost:5050/api/anggota/${id}`, updates);
-      const res = await axios.get<Anggota[]>('http://localhost:5050/api/anggota');
-      setAnggota(res.data);
+      const res = await axios.get<AnggotaFromBackend[]>('http://localhost:5050/api/anggota');
+      setAnggota(res.data.map((a: AnggotaFromBackend) => ({ ...a, id_anggota: a._id })));
     } catch (err) {
-      alert('Gagal update anggota: ' + (err as Error).message);
+      throw new Error('Gagal update anggota: ' + (err as Error).message);
     }
   };
 

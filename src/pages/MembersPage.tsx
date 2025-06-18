@@ -12,9 +12,11 @@ const MembersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
 
   const filteredMembers = anggota.filter(member => {
-    const matchesSearch = member.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.nomor_anggota.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (
+      (member.nama_lengkap && member.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (member.nomor_anggota && member.nomor_anggota.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
     const matchesStatus = !statusFilter || member.status_aktif === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -24,11 +26,15 @@ const MembersPage: React.FC = () => {
     setShowForm(false);
   };
 
-  const handleUpdateMember = (memberData: Omit<Anggota, 'id_anggota' | 'nomor_anggota' | 'created_at' | 'updated_at'>) => {
+  const handleUpdateMember = async (memberData: Omit<Anggota, 'id_anggota' | 'nomor_anggota' | 'created_at' | 'updated_at'>) => {
     if (editingMember && editingMember.id_anggota) {
-      updateAnggota(editingMember.id_anggota, memberData);
-      setEditingMember(null);
-      setShowForm(false);
+      try {
+        await updateAnggota(editingMember.id_anggota, memberData);
+        setEditingMember(null);
+        setShowForm(false);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Gagal update anggota!');
+      }
     } else {
       alert('ID anggota tidak valid!');
     }

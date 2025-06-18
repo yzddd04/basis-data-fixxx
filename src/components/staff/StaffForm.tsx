@@ -87,29 +87,29 @@ const StaffForm: React.FC<StaffFormProps> = ({ staff, onSubmit, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-gray-900 bg-opacity-50"
       onClick={onClose}
     >
       <div
         className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
             {staff ? 'Edit Petugas' : 'Tambah Petugas Baru'}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+            className="p-2 text-gray-400 rounded-lg hover:text-gray-600 hover:bg-gray-100"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Nama Petugas *
               </label>
               <input
@@ -123,12 +123,12 @@ const StaffForm: React.FC<StaffFormProps> = ({ staff, onSubmit, onClose }) => {
                 placeholder="Masukkan nama petugas"
               />
               {errors.nama_petugas && (
-                <p className="text-red-600 text-sm mt-1">{errors.nama_petugas}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.nama_petugas}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Jabatan *
               </label>
               <select
@@ -145,12 +145,12 @@ const StaffForm: React.FC<StaffFormProps> = ({ staff, onSubmit, onClose }) => {
                 ))}
               </select>
               {errors.jabatan && (
-                <p className="text-red-600 text-sm mt-1">{errors.jabatan}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.jabatan}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
                 Nomor Telepon *
               </label>
               <input
@@ -164,13 +164,13 @@ const StaffForm: React.FC<StaffFormProps> = ({ staff, onSubmit, onClose }) => {
                 placeholder="081234567890"
               />
               {errors.telepon && (
-                <p className="text-red-600 text-sm mt-1">{errors.telepon}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.telepon}</p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block mb-2 text-sm font-medium text-gray-700">
               Alamat *
             </label>
             <textarea
@@ -184,21 +184,21 @@ const StaffForm: React.FC<StaffFormProps> = ({ staff, onSubmit, onClose }) => {
               placeholder="Masukkan alamat lengkap"
             />
             {errors.alamat && (
-              <p className="text-red-600 text-sm mt-1">{errors.alamat}</p>
+              <p className="mt-1 text-sm text-red-600">{errors.alamat}</p>
             )}
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end pt-4 space-x-3 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg transition-colors hover:bg-gray-200"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg transition-colors hover:bg-blue-700"
             >
               {staff ? 'Update Petugas' : 'Tambah Petugas'}
             </button>

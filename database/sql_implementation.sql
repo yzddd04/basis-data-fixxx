@@ -13,7 +13,6 @@ CREATE TABLE petugas (
     no_telepon VARCHAR(15) NOT NULL,
     alamat TEXT NOT NULL,
     tanggal_lahir DATE NOT NULL,
-    jenis_kelamin ENUM('Laki-laki', 'Perempuan') NOT NULL,
     status ENUM('Aktif', 'Tidak Aktif') DEFAULT 'Aktif',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

@@ -17,11 +17,13 @@ const ReturnsPage: React.FC = () => {
   const filteredLoans = activeLoans.filter(loan => {
     const member = anggota.find(a => a.id_anggota === loan.id_anggota);
     const book = buku.find(b => b.id_buku === loan.id_buku);
-    
+    if (!member && !book) return false;
     return (
-      member?.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member?.nomor_anggota.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book?.judul_buku.toLowerCase().includes(searchTerm.toLowerCase())
+      (member && (
+        (member.nama_lengkap && member.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (member.nomor_anggota && member.nomor_anggota.toLowerCase().includes(searchTerm.toLowerCase()))
+      )) ||
+      (book && book.judul_buku && book.judul_buku.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   });
 

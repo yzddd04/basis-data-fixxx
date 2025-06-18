@@ -15,7 +15,7 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSubmit, onClose }) =>
     telepon: '',
     email: '',
     tanggal_daftar: new Date().toISOString().split('T')[0],
-    status_aktif: 'aktif' as const,
+    status_aktif: 'aktif' as 'aktif' | 'non-aktif',
     is_deleted: false
   });
 
@@ -32,6 +32,17 @@ const MemberForm: React.FC<MemberFormProps> = ({ member, onSubmit, onClose }) =>
         status_aktif: member.status_aktif,
         is_deleted: member.is_deleted
       });
+    } else {
+      setFormData({
+        nama_lengkap: '',
+        alamat: '',
+        telepon: '',
+        email: '',
+        tanggal_daftar: new Date().toISOString().split('T')[0],
+        status_aktif: 'aktif',
+        is_deleted: false
+      });
+      setErrors({});
     }
   }, [member]);
 
